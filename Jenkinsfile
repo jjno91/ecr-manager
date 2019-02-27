@@ -26,6 +26,7 @@ pipeline {
     string(name: 'REPOSITORY_NAME', defaultValue: 'ecr-manager-test', description: 'Name of the ECR repository to be created/updated')
     string(name: 'COST_CENTER', defaultValue: 'IT', description: 'Used to track ongoing costs for the repository')
     string(name: 'REGION', defaultValue: 'us-east-1', description: 'Region in which the repository will be created')
+    booleanParam(name: 'IMPORT', defaultValue: false, description: 'Import pre-existing repository of the same name')
     booleanParam(name: 'DRY_RUN', defaultValue: false, description: 'Prevent the "Apply" stage from running')
   }
 
@@ -48,6 +49,19 @@ pipeline {
         }
       }
     }
+    stage('Import') {
+      when {
+        allOf {
+          expression { params.IMPORT }
+          not { expression { params.DRY_RUN } }
+        }
+      }
+      steps {
+        container('this') {
+          sh 'terraform import aws_ecr_repository.this $REPOSITORY_NAME'
+        }
+      }
+    }
     stage('Plan') {
       steps {
         container('this') {
@@ -66,7 +80,7 @@ pipeline {
       when {
         allOf {
           branch "master"
-          environment name: DRY_RUN, value: false
+          not { expression { params.DRY_RUN } }
         }
       }
       steps {
