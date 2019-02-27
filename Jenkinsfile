@@ -58,7 +58,14 @@ pipeline {
       }
       steps {
         container('this') {
-          sh 'terraform import aws_ecr_repository.this $REPOSITORY_NAME'
+          sh '''
+            export TF_VAR_creator=$(git config --get remote.origin.url)
+            export TF_VAR_repository_name=$REPOSITORY_NAME
+            export TF_VAR_cost_center=$COST_CENTER
+            export TF_VAR_region=$REGION
+            
+            terraform import aws_ecr_repository.this $REPOSITORY_NAME
+          '''
         }
       }
     }
